@@ -1,0 +1,19 @@
+{
+    "schemaName": "races",
+    "dimensionFieldSpecs": [
+      {
+        "name": "course",
+        "dataType": "STRING"
+      },
+      {
+        "name": "runId",
+        "dataType": "STRING"
+      }
+    ],
+    "dateTimeFieldSpecs": [{
+      "name": "startTime",
+      "dataType": "TIMESTAMP",
+      "format" : "1:MILLISECONDS:EPOCH",
+      "granularity": "1:MILLISECONDS"
+    }]
+  }

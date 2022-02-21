@@ -1,0 +1,34 @@
+{
+  "schemaName": "courses",
+  "dimensionFieldSpecs": [
+    {
+      "name": "shortName",
+      "dataType": "STRING"
+    },
+    {
+      "name": "longName",
+      "dataType": "STRING"
+    },
+    {
+      "name": "distance",
+      "dataType": "DOUBLE"
+    },
+    {
+      "name": "courseMap",
+      "dataType": "BYTES"
+    },
+    {
+      "name": "geoFenceLocation",
+      "dataType": "BYTES"
+    },
+    {
+      "name": "startLocation",
+      "dataType": "BYTES"
+    },
+    {
+      "name": "endLocation",
+      "dataType": "BYTES"
+    }
+  ],
+  "primaryKeyColumns": ["shortName"]
+}

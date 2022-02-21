@@ -1,0 +1,26 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+stravalib = "*"
+fastapi = "*"
+uvicorn = "*"
+jsonlines = "*"
+streamlit = "*"
+requests = "*"
+pandas = "*"
+shapely = "*"
+geopandas = "*"
+confluent-kafka = "*"
+pinotdb = "*"
+plotly = "*"
+folium = "*"
+streamlit-folium = "*"
+geopy = "*"
+
+[requires]
+python_version = "3.8"

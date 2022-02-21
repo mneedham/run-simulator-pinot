@@ -1,0 +1,44 @@
+{
+  "tableName": "courses",
+  "tableType": "OFFLINE",
+  "segmentsConfig": {
+    "schemaName": "courses",
+    "replication": "1"
+  },
+  "tenants": {
+    "broker": "DefaultTenant",
+    "server": "DefaultTenant"
+  },
+  "tableIndexConfig": {
+    "loadMode": "MMAP"
+  },
+  "metadata": {},
+  "ingestionConfig": {
+    "batchIngestionConfig": {
+      "segmentIngestionType": "REFRESH",
+      "segmentIngestionFrequency": "DAILY"
+    },
+    "transformConfigs": [
+      {
+        "columnName": "courseMap",
+        "transformFunction": "ST_GeogFromText(map)"
+      },
+      {
+        "columnName": "geoFenceLocation",
+        "transformFunction": "ST_GeogFromText(geoFence)"
+      },
+      {
+        "columnName": "startLocation",
+        "transformFunction": "ST_GeogFromText(start)"
+      },
+      {
+        "columnName": "endLocation",
+        "transformFunction": "ST_GeogFromText(start)"
+      }
+    ]
+  },
+  "quota": {
+    "storage": "200M"
+  },
+  "isDimTable": true
+}

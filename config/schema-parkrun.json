@@ -1,0 +1,51 @@
+{
+    "schemaName": "parkrun",
+    "primaryKeyColumns": ["competitorId"],
+    "dimensionFieldSpecs": [
+      {
+        "name": "runId",
+        "dataType": "STRING"
+      },  
+      {
+        "name": "eventId",
+        "dataType": "STRING"
+      },     
+      {
+        "name": "competitorId",
+        "dataType": "LONG"
+      },      
+      {
+        "name": "rawTime",
+        "dataType": "INT"
+      },
+
+      {
+        "name": "lat",
+        "dataType": "DOUBLE"
+      },
+      {
+        "name": "lon",
+        "dataType": "DOUBLE"
+      },
+      {
+        "name": "location",
+        "dataType": "BYTES"
+      },
+      {
+        "name": "course",
+        "dataType": "STRING"
+      }
+    ],
+    "metricFieldSpecs": [
+      {
+        "name": "distance",
+        "dataType": "DOUBLE"
+      }
+    ],
+    "dateTimeFieldSpecs": [{
+      "name": "timestamp",
+      "dataType": "TIMESTAMP",
+      "format" : "1:MILLISECONDS:EPOCH",
+      "granularity": "1:MILLISECONDS"
+    }]
+  }
