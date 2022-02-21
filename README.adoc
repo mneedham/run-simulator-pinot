@@ -60,36 +60,5 @@ docker exec -it kafka-strava kafka-console-consumer.sh \
 
 [source, bash]
 ----
-docker exec -it kafka-strava kafka-topics.sh \
-  --bootstrap-server localhost:9092 \
-  --describe \
-  --topic activities
-----
-
-.Create topic with partitions
-[source, bash]
-----
-docker exec -it kafka-strava kafka-topics.sh \
-  --bootstrap-server localhost:9092 \
-  --create \
-  --topic activities \
-  --partitions 10
-----
-
-.Stream messages for topic / partition
-[source,bash]
-----
-docker exec -it kafka-strava kafka-console-consumer.sh \
-  --bootstrap-server localhost:9092 \
-  --topic activities \
-  --partition 2 \
-  --from-beginning
-----
-
-.Offsets for each partition
-[source, bash]
-----
-docker exec -it kafka-strava kafka-run-class.sh kafka.tools.GetOffsetShell \
-  --broker-list localhost:9092 \
-  --topic activities
+streamlit run app.py
 ----
