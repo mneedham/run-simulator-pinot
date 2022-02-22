@@ -38,6 +38,13 @@ docker exec \
   -jobSpecFile /config/job-spec-courses.yml
 ----
 
+== Python Dependencies
+
+[source, bash]
+----
+pipenv shell
+pipenv install
+----
 
 == Race generator
 

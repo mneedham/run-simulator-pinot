@@ -20,6 +20,7 @@ from datetime import timedelta, datetime
 from confluent_kafka import Producer
 import uuid
 import json
+import numpy as np
 
 geoid = Geod(ellps="WGS84")
 
@@ -143,11 +144,12 @@ def page_home():
     st.header("Where are they?")
 
     m = folium.Map()
+
     folium.Marker(location=(51.451961, -0.292886), icon=folium.Icon(color="green", icon="flag"), popup="Start").add_to(m)
     folium.Marker(location=(51.450002, -0.295043), icon=folium.Icon(color="red", icon="flag"), popup="Finish").add_to(m)
 
     for lat, lon in zip(df_front.lat.values, df_front.lon.values):
-        folium.CircleMarker(location=(lat, lon), radius=3, color='blue').add_to(m)
+        folium.CircleMarker(location=(lat, lon), radius=3, color='Fuchsia').add_to(m)
 
     loc = [(point[1], point[0]) for point in zip(x_geo, y_geo)]
     lat = sum([point[0] for point in loc]) / len(loc)
@@ -157,7 +159,7 @@ def page_home():
     loc = [(point[1], point[0]) for point in zip(x, y)]
     lat = sum([point[0] for point in loc]) / len(loc)
     lon = sum([point[1] for point in loc]) / len(loc)
-    route = folium.PolyLine(loc, color='black', weight=2, opacity=0.8).add_to(m)
+    route = folium.PolyLine(loc, color='#808080', weight=2, opacity=0.8).add_to(m)
 
     m.fit_bounds(route.get_bounds())
 
