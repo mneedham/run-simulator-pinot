@@ -33,7 +33,7 @@
       },
       {
         "columnName": "endLocation",
-        "transformFunction": "ST_GeogFromText(start)"
+        "transformFunction": "ST_GeogFromText(end)"
       }
     ]
   },

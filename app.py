@@ -50,7 +50,9 @@ def page_home():
         lookup('courses','distance','shortName',course) as distance,
         lookup('courses','longName','shortName',course) as courseName,
         St_AsText(lookup('courses','courseMap','shortName',course)) as courseMap,
-        St_AsText(lookup('courses','geoFenceLocation','shortName',course)) as geoFenceLocation
+        St_AsText(lookup('courses','geoFenceLocation','shortName',course)) as geoFenceLocation,
+        St_AsText(lookup('courses','startLocation','shortName',course)) as startLocation,
+        St_AsText(lookup('courses','endLocation','shortName',course)) as endLocation
     from races
     WHERE runId = %(runId)s
     """, {"runId": run_id})
@@ -61,6 +63,8 @@ def page_home():
     course_name = df["courseName"].values[0]
     course_map_wkt = df["courseMap"].values[0]
     geo_fence_wkt = df["geoFenceLocation"].values[0]
+    start_wkt = df["startLocation"].values[0]
+    end_wkt = df["endLocation"].values[0]
 
     points = wkt.loads(course_map_wkt)
     x, y = points.exterior.coords.xy if points.type == 'Polygon' else points.xy
@@ -145,8 +149,11 @@ def page_home():
 
     m = folium.Map()
 
-    folium.Marker(location=(51.451961, -0.292886), icon=folium.Icon(color="green", icon="flag"), popup="Start").add_to(m)
-    folium.Marker(location=(51.450002, -0.295043), icon=folium.Icon(color="red", icon="flag"), popup="Finish").add_to(m)
+    x_start, y_start = wkt.loads(start_wkt).coords.xy
+    x_end, y_end = wkt.loads(end_wkt).coords.xy
+
+    folium.Marker(location=(y_start[0], x_start[0]), icon=folium.Icon(color="green", icon="flag"), popup="Start").add_to(m)
+    folium.Marker(location=(y_end[0], x_end[0]), icon=folium.Icon(color="red", icon="flag"), popup="Finish").add_to(m)
 
     for lat, lon in zip(df_front.lat.values, df_front.lon.values):
         folium.CircleMarker(location=(lat, lon), radius=3, color='Fuchsia').add_to(m)
