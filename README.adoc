@@ -11,21 +11,21 @@ docker-compose up
 
 [source, bash]
 ----
-docker exec -it pinot-controller-strava bin/pinot-admin.sh AddTable   \
+docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
   -tableConfigFile /config/table-realtime-races.json   \
   -schemaFile /config/schema-races.json -exec
 ----
 
 [source, bash]
 ----
-docker exec -it pinot-controller-strava bin/pinot-admin.sh AddTable   \
+docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
   -tableConfigFile /config/table-realtime-parkrun.json   \
   -schemaFile /config/schema-parkrun.json -exec
 ----
 
 [source, bash]
 ----
-docker exec -it pinot-controller-strava bin/pinot-admin.sh AddTable   \
+docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
   -tableConfigFile /config/table-dim-courses.json   \
   -schemaFile /config/schema-courses.json -exec
 ----
@@ -34,7 +34,7 @@ docker exec -it pinot-controller-strava bin/pinot-admin.sh AddTable   \
 [source, bash]
 ----
 docker exec \
-  -it pinot-controller-strava bin/pinot-admin.sh LaunchDataIngestionJob \
+  -it pinot-controller-run bin/pinot-admin.sh LaunchDataIngestionJob \
   -jobSpecFile /config/job-spec-courses.yml
 ----
 
@@ -57,7 +57,7 @@ streamlit run create_race.py
 .Check for generated messages
 [source, bash]
 ----
-docker exec -it kafka-strava kafka-console-consumer.sh \
+docker exec -it kafka-run kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic parkrun
 ----

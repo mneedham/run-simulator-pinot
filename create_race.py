@@ -109,13 +109,7 @@ def gen_route(points, geo_fence, how_many_get_stopped, min_pause, max_pause, sta
     seconds_per_km = random.randint(fastest, slowest)    
     return generate_route(points, geo_fence, how_many_get_stopped, min_pause, max_pause, start, id, seconds_per_km)
 
-def page_new_race():
-    st.header("Create new race")
-    start_time = datetime.now()
-
-    st.write(f"Start Time: {start_time}")
-
-    conn = connect(host='localhost', port=8099, path='/query/sql', scheme='http')
+def get_courses(conn):    
     curs = conn.cursor()
     curs.execute("""
     select shortName,
@@ -135,7 +129,16 @@ def page_new_race():
 
     for k, v in all_courses.items():
         v.reverse()
+    return all_courses
 
+def page_new_race():
+    conn = connect(host='localhost', port=8099, path='/query/sql', scheme='http')
+    st.header("Create new race")
+    start_time = datetime.now()
+
+    st.write(f"Start Time: {start_time}")
+
+    all_courses = get_courses(conn)
     course = st.selectbox('Select course', all_courses.keys())
 
     curs = conn.cursor()

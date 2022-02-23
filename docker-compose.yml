@@ -3,7 +3,7 @@ services:
   zookeeper:
     image: zookeeper:3.5.6
     hostname: zookeeper
-    container_name: zookeeper-strava-realtime
+    container_name: zookeeper-run
     ports:
       - "2181:2181"
     environment:
@@ -12,7 +12,7 @@ services:
   kafka:
     image: wurstmeister/kafka:latest
     restart: unless-stopped
-    container_name: "kafka-strava"
+    container_name: "kafka-run"
     ports:
       - "9092:9092"
     expose:
@@ -20,16 +20,16 @@ services:
     depends_on:
       - zookeeper
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-strava-realtime:2181/kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-run:2181/kafka
       KAFKA_BROKER_ID: 0
-      KAFKA_ADVERTISED_HOST_NAME: kafka-strava
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-strava:9093,OUTSIDE://localhost:9092
+      KAFKA_ADVERTISED_HOST_NAME: kafka-run
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-run:9093,OUTSIDE://localhost:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,OUTSIDE:PLAINTEXT
   pinot-controller:
     image: apachepinot/pinot:0.9.3
-    command: "StartController -zkAddress zookeeper-strava-realtime:2181 -dataDir /data"
-    container_name: "pinot-controller-strava-realtime"
+    command: "StartController -zkAddress zookeeper-run:2181 -dataDir /data"
+    container_name: "pinot-controller-run"
     volumes:
       - ./config:/config
       - ./data-realtime:/data
@@ -41,17 +41,17 @@ services:
       - zookeeper
   pinot-broker:
     image: apachepinot/pinot:0.9.3
-    command: "StartBroker -zkAddress zookeeper-strava-realtime:2181"
+    command: "StartBroker -zkAddress zookeeper-run:2181"
     restart: unless-stopped
-    container_name: "pinot-broker-strava-realtime"
+    container_name: "pinot-broker-run"
     ports:
       - "8099:8099"
     depends_on:
       - pinot-controller
   pinot-server:
     image: apachepinot/pinot:0.9.3
-    command: "StartServer -zkAddress zookeeper-strava-realtime:2181"
+    command: "StartServer -zkAddress zookeeper-run:2181"
     restart: unless-stopped
-    container_name: "pinot-server-strava-realtime"
+    container_name: "pinot-server-run"
     depends_on:
       - pinot-broker
