@@ -18,4 +18,11 @@ recordReaderSpec:
 tableSpec:
   tableName: 'courses'
 pinotClusterSpecs:
-  - controllerURI: 'http://localhost:9000'
+  - controllerURI: 'http://pinot-controller-run:9000'
+pushJobSpec:
+
+  # pushAttempts: number of attempts for push job, default is 1, which means no retry.
+  pushAttempts: 2
+
+  # pushRetryIntervalMillis: retry wait Ms, default to 1 second.
+  pushRetryIntervalMillis: 1000

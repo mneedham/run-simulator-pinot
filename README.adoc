@@ -6,37 +6,84 @@ This repository contains the code demonstrated in the https://www.meetup.com/apa
 
 [source, bash]
 ----
-docker-compose up
+docker compose up 
+----
+
+M1 Mac:
+
+[source, bash]
+----
+docker compose -f docker-compose-m1.yml up
+----
+
+== Create Kafka Topics
+
+[source, bash]
+----
+docker exec -it kafka-run kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --partitions 5 \
+  --topic parkrun \
+  --create 
 ----
 
 [source, bash]
 ----
-docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
-  -tableConfigFile /config/table-realtime-races.json   \
-  -schemaFile /config/schema-races.json -exec
+docker exec -it kafka-run kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --partitions 5 \
+  --topic races \
+  --create 
+----
+
+== Create Pinot Tables
+
+[source, bash]
+----
+docker run \
+   --network running-sim \
+   -v $PWD/config:/config \
+   apachepinot/pinot:0.12.0-arm64 AddTable \
+     -schemaFile /config/schema-races.json \
+     -tableConfigFile /config/table-realtime-races.json \
+     -controllerHost "pinot-controller-run" \
+    -exec
 ----
 
 [source, bash]
 ----
-docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
-  -tableConfigFile /config/table-realtime-parkrun.json   \
-  -schemaFile /config/schema-parkrun.json -exec
+docker run \
+   --network running-sim \
+   -v $PWD/config:/config \
+   apachepinot/pinot:0.12.0-arm64 AddTable \
+     -schemaFile /config/schema-parkrun.json \
+     -tableConfigFile /config/table-realtime-parkrun.json \
+     -controllerHost "pinot-controller-run" \
+    -exec
 ----
 
 [source, bash]
 ----
-docker exec -it pinot-controller-run bin/pinot-admin.sh AddTable   \
-  -tableConfigFile /config/table-dim-courses.json   \
-  -schemaFile /config/schema-courses.json -exec
+docker run \
+   --network running-sim \
+   -v $PWD/config:/config \
+   apachepinot/pinot:0.12.0-arm64 AddTable \
+     -schemaFile /config/schema-courses.json \
+     -tableConfigFile /config/table-dim-courses.json \
+     -controllerHost "pinot-controller-run" \
+    -exec
 ----
-
 
 [source, bash]
 ----
-docker exec \
-  -it pinot-controller-run bin/pinot-admin.sh LaunchDataIngestionJob \
+docker run \
+   --network running-sim \
+   -v $PWD/config:/config \
+   -v $PWD/input:/input \
+   apachepinot/pinot:0.12.0-arm64 LaunchDataIngestionJob \
   -jobSpecFile /config/job-spec-courses.yml
 ----
+
 
 == Python Dependencies
 
@@ -57,9 +104,7 @@ streamlit run create_race.py
 .Check for generated messages
 [source, bash]
 ----
-docker exec -it kafka-run kafka-console-consumer.sh \
-  --bootstrap-server localhost:9092 \
-  --topic parkrun
+kcat -C -b localhost:9092 -t parkrun
 ----
 
 == Real-Time Dashboard

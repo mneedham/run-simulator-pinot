@@ -121,7 +121,7 @@ def get_courses(conn):
     all_courses = {
         pair[0]: list(zip(wkt.loads(pair[1]).exterior.xy[0], 
                           wkt.loads(pair[1]).exterior.xy[1])) 
-                 if wkt.loads(pair[1]).type == 'Polygon'
+                 if wkt.loads(pair[1]).geom_type == 'Polygon'
                  else list(zip(wkt.loads(pair[1]).xy[0], 
                                wkt.loads(pair[1]).xy[1])) 
         for pair in df.values.tolist()
@@ -158,7 +158,7 @@ def page_new_race():
     geo_fence = wkt.loads(geo_fence_wkt)
 
     points = wkt.loads(course_map_wkt)
-    x, y = points.exterior.coords.xy if points.type == 'Polygon' else points.xy
+    x, y = points.exterior.coords.xy if points.geom_type == 'Polygon' else points.xy
 
     m = folium.Map()
 
@@ -187,24 +187,23 @@ def page_new_race():
 
     def generate_race():
         st.session_state.race_in_progress = True    
-
-    st.session_state.data = [] if 'data' not in st.session_state else st.session_state.data
-    st.session_state.iter = 0 if 'iter' not in st.session_state else st.session_state.iter
+    
     producer = Producer({'bootstrap.servers': 'localhost:9092'})    
 
     paused = False
-    if st.session_state.iter == 0 and len(st.session_state.data) == 0:
+    if st.session_state['iter'] == 0 and len(st.session_state['data']) == 0:
         if st.button('Generate race', key="generateRace", on_click=generate_race):
             with st.spinner('Generating race...'):                                                                                                                                                                                                                                                                                                                                          
                 points = all_courses[course]   
                 entries = []
-                with concurrent.futures.ProcessPoolExecutor() as executor:
-                    start = time.perf_counter()
-                    secs = range(0, int(competitors))
-                    pool = [executor.submit(gen_route, points, geo_fence, how_many_get_stopped, min_pause, max_pause, start_time, fastest, slowest) for i in secs]
-                    for i in concurrent.futures.as_completed(pool):        
-                        entries.extend(i.result())
-                    end = time.perf_counter()
+                # with concurrent.futures.ProcessPoolExecutor() as executor:
+                #     start = time.perf_counter()
+                #     secs = range(0, int(competitors))
+                #     pool = [executor.submit(gen_route, points, geo_fence, how_many_get_stopped, min_pause, max_pause, start_time, fastest, slowest) for i in secs]
+                #     for i in concurrent.futures.as_completed(pool):        
+                #         entries.extend(i.result())
+                #     end = time.perf_counter()
+            start,end = [0,0]
             st.write(f'Race generated in {round(end-start, 2)} second(s)') 
             run_id = str(uuid.uuid4())
 
@@ -267,4 +266,9 @@ st.title("Park Run Simulator")
 now = datetime.now()
 dt_string = now.strftime("%d %B %Y %H:%M:%S")
 
+if 'iter' not in st.session_state:
+    st.session_state['iter'] = 0
+
+if 'data' not in st.session_state:
+    st.session_state['data'] = []
 page_new_race()
