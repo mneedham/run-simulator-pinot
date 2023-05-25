@@ -12,6 +12,8 @@ import geopy.distance
 from pyproj import Geod
 from operator import itemgetter
 from itertools import groupby
+from twisted.internet import task, reactor
+from model import Race, Competitor
 
 import folium
 from streamlit_folium import folium_static
@@ -106,7 +108,7 @@ def generate_route(points, geo_fence, how_many_get_stopped, min_pause, max_pause
 
 def gen_route(points, geo_fence, how_many_get_stopped, min_pause, max_pause, start, fastest, slowest):
     id = random.randint(1, 1_000_000)
-    seconds_per_km = random.randint(fastest, slowest)    
+    seconds_per_km = random.randint(fastest, slowest)
     return generate_route(points, geo_fence, how_many_get_stopped, min_pause, max_pause, start, id, seconds_per_km)
 
 def get_courses(conn):    
@@ -130,6 +132,33 @@ def get_courses(conn):
     for k, v in all_courses.items():
         v.reverse()
     return all_courses
+
+def emit_locations(producer):
+    if 'races' in st.session_state:
+        for race_id, race in st.session_state['races'].items():
+            for competitor in race.competitors:
+                entry = competitor.next_point()
+                if entry:
+                    print(entry)
+                    publish_point(producer, 
+                        race_id, entry["id"], entry["rawTime"], entry["timestamp"], 
+                        entry["point"], entry["distance"], race.course
+                    )       
+        producer.flush()
+
+def ebLoopFailed(failure):
+    """
+    Called when loop execution failed.
+    """
+    print(str(failure))
+    reactor.stop()
+
+def cbLoopDone(result):
+    """
+    Called when loop was stopped with success.
+    """
+    print("Loop done.")
+    reactor.stop()
 
 def page_new_race():
     conn = connect(host='localhost', port=8099, path='/query/sql', scheme='http')
@@ -195,7 +224,7 @@ def page_new_race():
         if st.button('Generate race', key="generateRace", on_click=generate_race):
             with st.spinner('Generating race...'):                                                                                                                                                                                                                                                                                                                                          
                 points = all_courses[course]   
-                entries = []
+                # entries = []
                 # with concurrent.futures.ProcessPoolExecutor() as executor:
                 #     start = time.perf_counter()
                 #     secs = range(0, int(competitors))
@@ -203,27 +232,49 @@ def page_new_race():
                 #     for i in concurrent.futures.as_completed(pool):        
                 #         entries.extend(i.result())
                 #     end = time.perf_counter()
-            start,end = [0,0]
-            st.write(f'Race generated in {round(end-start, 2)} second(s)') 
-            run_id = str(uuid.uuid4())
+                start = time.perf_counter()
+                
+                run_id = str(uuid.uuid4())
 
-            row = {
-                "runId": run_id,
-                "course": course,
-                "startTime": start_time
-            }
+                row = {
+                    "runId": run_id,
+                    "course": course,
+                    "startTime": start_time
+                }
 
-            payload = json.dumps(row, default=json_serializer, ensure_ascii=False).encode('utf-8')
-            producer.produce(topic='races', key=str(row['runId']), value=payload, callback=acked)
-            producer.flush()
+                payload = json.dumps(row, default=json_serializer, ensure_ascii=False).encode('utf-8')
+                producer.produce(topic='races', key=str(row['runId']), value=payload, callback=acked)
+                producer.flush()
+
+                race = Race(id=run_id, points=points, course=course)
+                st.session_state['races'][run_id] = race
+                for idx in range(0, int(competitors)):                
+                    id = random.randint(1, 1_000_000)
+                    competitor = Competitor(id=id, how_many_get_stopped = how_many_get_stopped)
+                    seconds_per_km = random.randint(fastest, slowest)
+                    competitor.generate_points(race.points, min_pause, max_pause, geo_fence, seconds_per_km, start_time)
+                    st.session_state['races'][run_id].add_competitor(competitor)
+
+                end = time.perf_counter()
+                st.write(f'Race generated in {round(end-start, 2)} second(s)') 
+
+            l = task.LoopingCall(emit_locations, producer)
+            loopDeferred = l.start(0)
+            loopDeferred.addErrback(ebLoopFailed)
+            loopDeferred.addCallback(cbLoopDone)
+
+            if not reactor.running:
+                reactor.run(installSignalHandlers=0)
+
+
             
-            entries.sort(key = itemgetter("rawTime"))
-            groups = groupby(entries, itemgetter("rawTime"))
+            # entries.sort(key = itemgetter("rawTime"))
+            # groups = groupby(entries, itemgetter("rawTime"))
             
-            for (key, data) in groups:
-                for entry in data:
-                    st.session_state.data.append({**entry, "key": key, "course": course, "run_id": run_id})
-            st.experimental_rerun()
+            # for (key, data) in groups:
+            #     for entry in data:
+            #         st.session_state.data.append({**entry, "key": key, "course": course, "run_id": run_id})
+            # st.experimental_rerun()
     else:
         st.button('Generate race', key="generateRace", disabled=True)        
         paused = st.checkbox("Pause Race", key="pauseRace")
@@ -260,7 +311,7 @@ def page_new_race():
         st.write("All events published")
         st.session_state.iter = 0
         st.session_state.data= []
-        st.experimental_rerun()
+        # st.experimental_rerun()
 
 st.title("Park Run Simulator")
 now = datetime.now()
@@ -271,4 +322,8 @@ if 'iter' not in st.session_state:
 
 if 'data' not in st.session_state:
     st.session_state['data'] = []
+
+if 'races' not in st.session_state:
+    st.session_state['races'] = {}
+
 page_new_race()
