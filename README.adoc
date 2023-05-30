@@ -106,6 +106,8 @@ On one tab:
 streamlit run create_race.py
 ----
 
+Navigate to http://localhost:8501
+
 On another tab:
 
 .Launch the data generator
@@ -130,3 +132,5 @@ On yet another tab:
 ----
 streamlit run app.py
 ----
+
+Navigate to http://localhost:8502
