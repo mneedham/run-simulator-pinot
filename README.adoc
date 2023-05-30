@@ -95,17 +95,23 @@ pipenv install
 
 == Race generator
 
+On one tab:
+
 .Launch the race generator
 [source, bash]
 ----
 streamlit run create_race.py
 ----
 
+On another tab:
+
 .Launch the data generator
 [source, bash]
 ----
 python datagen.py
 ----
+
+On a different tab:
 
 .Check for generated messages
 [source, bash]
@@ -115,6 +121,7 @@ kcat -C -b localhost:9092 -t parkrun
 
 == Real-Time Dashboard
 
+On yet another tab:
 
 [source, bash]
 ----
