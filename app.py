@@ -14,7 +14,7 @@ from operator import itemgetter
 from itertools import groupby
 
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from scripts.routes import richmond, crystal_palace
 from datetime import timedelta, datetime
 from confluent_kafka import Producer
@@ -173,7 +173,7 @@ def page_home():
 
     m.fit_bounds(route.get_bounds())
 
-    folium_static(m)
+    st_data = st_folium(m)
 
     st.subheader("Who's in the Geo fence?")
 
