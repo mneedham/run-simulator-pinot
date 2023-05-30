@@ -4,7 +4,7 @@
 # See LICENSE for details.
 
 from twisted.web import server, resource
-from twisted.internet import reactor, task, endpoints
+from twisted.internet import reactor, task, endpoints, threads, defer
 from twisted.internet.protocol import Factory, Protocol
 from confluent_kafka import Producer
 import json
@@ -61,36 +61,62 @@ class Simple(resource.Resource):
 
         race = Race(id=data_obj.run_id, points=data_obj.points, course=data_obj.course)
 
-        geo_fence = get_geo_fence(data_obj.course)
+        d_geo_fence = threads.deferToThread(get_geo_fence, data_obj.course)
 
-        start_time = datetime.now()
+        def on_error(failure):
+            request.setResponseCode(500)
+            request.write(b"Internal Server Error")
+            request.finish()
 
-        for idx in range(0, int(data_obj.competitors)):                
-            id = random.randint(1, 1_000_000)
-            competitor = Competitor(id=id, how_many_get_stopped = data_obj.how_many_get_stopped)
-            seconds_per_km = random.randint(data_obj.fastest, data_obj.slowest)
-            competitor.generate_points(race.points, data_obj.min_pause, data_obj.max_pause, geo_fence, seconds_per_km, start_time)
-            race.add_competitor(competitor)
+        def on_geo_fence_ready(geo_fence):
+            start_time = datetime.now()
 
-        races[race.id] = race
+            deferreds = []
 
-        
-        # Return a success response
-        return b"Success"
+            for idx in range(0, int(data_obj.competitors)):
+                competitor_id = random.randint(1, 1_000_000)
+                competitor = Competitor(id=competitor_id, how_many_get_stopped = data_obj.how_many_get_stopped)
+                seconds_per_km = random.randint(data_obj.fastest, data_obj.slowest)
+                
+                deferred_job = threads.deferToThread(
+                    competitor.generate_points,
+                    race.points,
+                    data_obj.min_pause,
+                    data_obj.max_pause,
+                    geo_fence,
+                    seconds_per_km,
+                    start_time
+                )
+                deferreds.append(deferred_job)
+                deferred_job.addCallback(lambda _, competitor=competitor: race.add_competitor(competitor))
+
+            def on_all_done(_):
+                races[race.id] = race
+                request.write(b"Success")
+                request.finish()
+
+            # Wait for all deferreds to complete before sending the response
+            defer.gatherResults(deferreds).addCallbacks(on_all_done, on_error)
+
+        d_geo_fence.addCallbacks(on_geo_fence_ready, on_error)
+
+        return server.NOT_DONE_YET
 
 def emit_locations():
+    messages_flushed = 0
     global races
-    print("emit_locations", races)
     for race_id, race in races.items():
         for competitor in race.competitors:
             entry = competitor.next_point()
             if entry:
-                print(entry)
                 publish_point(producer, 
                     race_id, entry["id"], entry["rawTime"], entry["timestamp"], 
                     entry["point"], entry["distance"], race.course
                 )       
-        producer.flush()
+                messages_flushed +=1
+        producer.flush()        
+    if messages_flushed > 0:
+        print(f"{datetime.now()}: Flushed {messages_flushed} events")
 
 def ebLoopFailed(failure):
     """
@@ -114,9 +140,10 @@ def acked(err, msg):
               .format(msg.value(), err.str()))
 
 def json_serializer(obj):
-    if isinstance(obj, (datetime, datetime.date)):
+    if isinstance(obj, datetime):  # This refers to datetime.datetime because of your import
         return obj.strftime("%Y-%m-%d %T%Z")
-    raise "Type %s not serializable" % type(obj)
+    raise TypeError("Type %s not serializable" % type(obj))
+
 
 def publish_point(producer, run_id, user_id, raw_time, timestamp, point, distance_so_far, course):
     # print(raw_time, timestamp, point, distance_so_far)
@@ -132,9 +159,13 @@ def publish_point(producer, run_id, user_id, raw_time, timestamp, point, distanc
         "distance": distance_so_far,
         "course": course
     }
+    print(row)
 
-    payload = json.dumps(row, default=json_serializer, ensure_ascii=False).encode('utf-8')
-    producer.produce(topic='parkrun', key=str(row['competitorId']), value=payload, callback=acked)
+    try:
+        payload = json.dumps(row, default=json_serializer, ensure_ascii=False).encode('utf-8')
+        producer.produce(topic='parkrun', key=str(row['competitorId']), value=payload, callback=acked)
+    except TypeError:
+        print(f"Failed to parse: {row}")
 
 def main():
     site = server.Site(Simple())

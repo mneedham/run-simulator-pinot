@@ -67,10 +67,11 @@ def page_home():
     end_wkt = df["endLocation"].values[0]
 
     points = wkt.loads(course_map_wkt)
-    x, y = points.exterior.coords.xy if points.type == 'Polygon' else points.xy
+    x, y = points.exterior.coords.xy if points.geom_type == 'Polygon' else points.xy
 
     points_geo = wkt.loads(geo_fence_wkt)
-    x_geo, y_geo = points_geo.exterior.coords.xy if points_geo.type == 'Polygon' else points_geo.xy
+    x_geo, y_geo = points_geo.exterior.coords.xy if points_geo.geom_type == 'Polygon' else points_geo.xy
+    
 
     st.markdown(f"""
     **Event**: {run_id}  
@@ -96,6 +97,8 @@ def page_home():
     styler = df.style.hide(axis='index')
     st.write(styler.to_html(), unsafe_allow_html=True)
 
+    final_point = f"POINT({x[0]} {y[0]})"
+
     curs = conn.cursor()
 
     query = """
@@ -104,14 +107,14 @@ def page_home():
         round(%(courseDistance)d - distance, 1) AS distanceToGo,
         ToDateTime(1000 / (distance / rawTime) * 1000, 'mm:ss') AS pacePerKm,
         ToDateTime(rawTime * 1000, 'mm:ss') AS raceTime,
-        lon, lat
+        lon, lat, %(finalPoint)s
     from parkrun
-    WHERE distanceToGo > 0 AND runId = %(runId)s
+    WHERE location <> ST_GeogFromText(%(finalPoint)s) AND runId = %(runId)s
     ORDER BY distanceToGo, rawTime
     limit 1000
     """
 
-    curs.execute(query, {"courseDistance": distance, "runId": run_id})
+    curs.execute(query, {"courseDistance": distance, "runId": run_id, "finalPoint": final_point})
     df_front = pd.DataFrame(curs, columns=[item[0] for item in curs.description])
 
     query = """
@@ -122,12 +125,12 @@ def page_home():
         ToDateTime(rawTime * 1000, 'mm:ss') AS raceTime,
         lon, lat
     from parkrun
-    WHERE distanceToGo > 0 AND runId = %(runId)s
+    WHERE location <> ST_GeogFromText(%(finalPoint)s) AND runId = %(runId)s
     ORDER BY distanceCovered
     limit 100
     """
 
-    curs.execute(query, {"courseDistance": distance, "runId": run_id})
+    curs.execute(query, {"courseDistance": distance, "runId": run_id, "finalPoint": final_point})
     df_back = pd.DataFrame(curs, columns=[item[0] for item in curs.description])
 
     st.header("Currently running")
@@ -236,17 +239,22 @@ def page_home():
 
     curs = conn.cursor()
     curs.execute("""
-    select round(%(courseDistance)d - distance, 1) <= 0 AS finished,
-        count(*)
+    select count(*)
     from parkrun
-    WHERE runId = %(runId)s
-    GROUP BY finished
-    """, {"courseDistance": distance, "runId": run_id})
-    df = pd.DataFrame(curs, columns=[item[0] for item in curs.description])
+    WHERE runId = %(runId)s AND location = ST_GeogFromText(%(finalPoint)s)
+    """, {"courseDistance": distance, "runId": run_id, "finalPoint": final_point})
+    finished = pd.DataFrame(curs, columns=[item[0] for item in curs.description])["count(*)"].values
+
+    curs.execute("""
+    select count(*)
+    from parkrun
+    WHERE runId = %(runId)s AND location <> ST_GeogFromText(%(finalPoint)s)
+    """, {"courseDistance": distance, "runId": run_id, "finalPoint": final_point})
+    not_finished = pd.DataFrame(curs, columns=[item[0] for item in curs.description])["count(*)"].values
 
 
-    finished = df[df.finished == 'true']["count(*)"].values
-    not_finished = df[df.finished == 'false']["count(*)"].values
+    # finished = df[df.finished == 'true']["count(*)"].values
+    # not_finished = df[df.finished == 'false']["count(*)"].values
 
     finished_score = finished[0] if len(finished) > 0 else 0
     not_finished_score = not_finished[0] if len(not_finished) > 0 else 0
@@ -289,12 +297,12 @@ def page_home():
         ToDateTime(rawTime * 1000, 'mm:ss') AS raceTime,
         ToDateTime("timestamp", 'HH:mm:ss') AS finishedAt
     from parkrun
-    WHERE distanceToGo <= 0 AND runId = %(runId)s
+    WHERE location = ST_GeogFromText(%(finalPoint)s) AND runId = %(runId)s
     ORDER BY rawTime DESC
     limit 5
     """
 
-    curs.execute(query, {"courseDistance": distance, "runId": run_id})
+    curs.execute(query, {"courseDistance": distance, "runId": run_id, "finalPoint": final_point})
     df = pd.DataFrame(curs, columns=[item[0] for item in curs.description])
 
     st.header("Who just finished?")

@@ -101,6 +101,12 @@ pipenv install
 streamlit run create_race.py
 ----
 
+.Launch the data generator
+[source, bash]
+----
+python datagen.py
+----
+
 .Check for generated messages
 [source, bash]
 ----

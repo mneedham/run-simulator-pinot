@@ -187,16 +187,6 @@ def page_new_race():
                 "fastest": fastest, "slowest": slowest, "min_pause": min_pause, "max_pause": max_pause}
             response = requests.post("http://localhost:8080", data=json.dumps(payload))
 
-            # race = Race(id=run_id, points=points, course=course)
-            # st.session_state['races'][run_id] = race            
-
-            # for idx in range(0, int(competitors)):                
-            #     id = random.randint(1, 1_000_000)
-            #     competitor = Competitor(id=id, how_many_get_stopped = how_many_get_stopped)
-            #     seconds_per_km = random.randint(fastest, slowest)
-            #     competitor.generate_points(race.points, min_pause, max_pause, geo_fence, seconds_per_km, start_time)
-            #     st.session_state['races'][run_id].add_competitor(competitor)
-
             end = time.perf_counter()
             st.write(f'Race generated in {round(end-start, 2)} second(s)')
             races = st.session_state['races']

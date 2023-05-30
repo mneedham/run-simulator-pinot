@@ -4,6 +4,7 @@ from pyproj import Geod
 from shapely.geometry import Point
 from datetime import timedelta, datetime
 from collections import deque
+from threading import Lock
 
 geoid = Geod(ellps="WGS84")
 
@@ -60,12 +61,14 @@ class Competitor:
                     totalTimePaused += seconds_to_pause
                     has_already_paused = True
 
-            route.append({"id": self.id, "rawTime": idx+1+totalTimePaused, "timestamp": start + timedelta(seconds=idx+1+totalTimePaused), "point": point2, "distance": distance_so_far})
+            route.append({"id": self.id, "rawTime": idx+1+totalTimePaused, "timestamp": start + timedelta(seconds=idx+1+totalTimePaused), "point": point2, "distance": distance_so_far})        
         
         self.route = route
+        # print("Points", points)
+        # print("Route", route)
 
     def next_point(self):
-        if self.route[0]["timestamp"] < datetime.now():
+        if len(self.route) > 0 and self.route[0]["timestamp"] < datetime.now():
             return self.route.popleft()
         return None
 
@@ -82,6 +85,7 @@ class Race:
         self.competitors = []
         self.points = points
         self.course = course
+        self.lock = Lock()  
 
     def __str__(self):
         return f"Race(id={self.id})"
@@ -90,5 +94,6 @@ class Race:
         return self.__str__()
 
     def add_competitor(self, competitor:Competitor):
-        self.competitors.append(competitor)
+        with self.lock:
+            self.competitors.append(competitor)
 
