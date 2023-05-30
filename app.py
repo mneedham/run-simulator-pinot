@@ -156,10 +156,7 @@ def page_home():
     x_end, y_end = wkt.loads(end_wkt).coords.xy
 
     folium.Marker(location=(y_start[0], x_start[0]), icon=folium.Icon(color="green", icon="flag"), popup="Start").add_to(m)
-    folium.Marker(location=(y_end[0], x_end[0]), icon=folium.Icon(color="red", icon="flag"), popup="Finish").add_to(m)
-
-    for lat, lon in zip(df_front.lat.values, df_front.lon.values):
-        folium.CircleMarker(location=(lat, lon), radius=3, color='Fuchsia').add_to(m)
+    folium.Marker(location=(y_end[0], x_end[0]), icon=folium.Icon(color="red", icon="flag"), popup="Finish").add_to(m)    
 
     loc = [(point[1], point[0]) for point in zip(x_geo, y_geo)]
     lat = sum([point[0] for point in loc]) / len(loc)
@@ -173,7 +170,14 @@ def page_home():
 
     m.fit_bounds(route.get_bounds())
 
-    st_data = st_folium(m)
+    fg = folium.FeatureGroup(name="Competitors")
+    
+    for lat, lon in zip(df_front.lat.values, df_front.lon.values):
+        fg.add_child(
+            folium.CircleMarker(location=(lat, lon), radius=3, color='Fuchsia')
+        )    
+
+    st_data = st_folium(m, feature_group_to_add=fg,)
 
     st.subheader("Who's in the Geo fence?")
 
