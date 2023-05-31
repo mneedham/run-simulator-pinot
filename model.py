@@ -9,10 +9,11 @@ from threading import Lock
 geoid = Geod(ellps="WGS84")
 
 class Competitor:
-    def __init__(self, id:int, how_many_get_stopped:int) -> None:
+    def __init__(self, id:int, how_many_get_stopped:int, pace_variance:float=0.2) -> None:
         self.id = id
         self.route = deque()
         self.should_pause = random.random() <= how_many_get_stopped
+        self.pace_variance = pace_variance
 
     def generate_points(self, points:[float], min_pause:int, max_pause:int, geo_fence, seconds_per_km, start):
         metres_per_second = 1000 / seconds_per_km
@@ -23,7 +24,7 @@ class Competitor:
                 (list(point1)[1], list(point1)[0]),  
                 (list(point2)[1], list(point2)[0])
             )
-            metres_per_second_adjusted = metres_per_second + random.randint(int(-metres_per_second * 0.2), int(metres_per_second * 0.2))
+            metres_per_second_adjusted = metres_per_second + random.randint(int(-metres_per_second * self.pace_variance), int(metres_per_second * self.pace_variance))
             n_extra_points = distance.meters / metres_per_second_adjusted
             
             if n_extra_points >= 1:

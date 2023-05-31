@@ -3,10 +3,6 @@ from model import Competitor
 from datetime import datetime
 from shapely.geometry import Polygon
 
-class DeterministicRandom:
-    def random(self):
-        return 0.5  # or any other value you like
-
 class TestCompetitor(unittest.TestCase):
     def test_generate_points(self):
         competitor = Competitor(1, 0.5)
@@ -47,7 +43,7 @@ class TestCompetitor(unittest.TestCase):
         self.assertEqual(next_point["distance"], 5.528714349709607)
 
     def test_generate_points_inside_geofence(self):
-        competitor = Competitor(1, 1)
+        competitor = Competitor(1, 1, pace_variance=0)
         
         # Define points all inside the geo fence.
         points = [(51.5072, -0.1656), (51.5076, -0.1757), (51.5060, -0.1800), (51.5098, -0.1625)]
@@ -57,12 +53,12 @@ class TestCompetitor(unittest.TestCase):
 
         # Define the coordinates for the vertices of your geo-fence.
         geo_fence_coordinates = [
-        (51.5111, -0.1857),  # Northwest corner
-        (51.5111, -0.1594),  # Northeast corner
-        (51.5028, -0.1594),  # Southeast corner
-        (51.5028, -0.1857),  # Southwest corner
-        (51.5111, -0.1857)   # Closing the Polygon
-    ]
+            (51.5111, -0.1857),  # Northwest corner
+            (51.5111, -0.1594),  # Northeast corner
+            (51.5028, -0.1594),  # Southeast corner
+            (51.5028, -0.1857),  # Southwest corner
+            (51.5111, -0.1857)   # Closing the Polygon
+        ]
 
         # Create the Polygon object.
         geo_fence = Polygon(geo_fence_coordinates)
@@ -71,8 +67,7 @@ class TestCompetitor(unittest.TestCase):
 
         competitor.generate_points(points, min_pause, max_pause, geo_fence, seconds_per_km, start)
 
-        for r in competitor.route:
-            print(r)
+        self.assertEqual(len(competitor.route), 532)
 
         next_point = competitor.next_point()
 
