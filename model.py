@@ -15,6 +15,15 @@ class Competitor:
         self.should_pause = random.random() <= how_many_get_stopped
         self.pace_variance = pace_variance
 
+    def place_to_pause(self, pairs_of_points, geo_fence):
+        points_in_geo = [point2 for point1, point2 in pairs_of_points if geo_fence.contains(Point(point2))]
+        points_in_geo_count = len(points_in_geo)
+
+        if not points_in_geo:
+            return None
+        else:
+            return points_in_geo[random.randint(0, points_in_geo_count-1)]
+
     def generate_points(self, points:[float], min_pause:int, max_pause:int, geo_fence, seconds_per_km, start):
         metres_per_second = 1000 / seconds_per_km
 
@@ -44,13 +53,8 @@ class Competitor:
         has_already_paused = False
 
         pairs_of_points = list(zip(all_points, all_points[1:]))
-        points_in_geo = [point2 for point1, point2 in pairs_of_points if geo_fence.contains(Point(point2))]
-        points_in_geo_count = len(points_in_geo)
 
-        if not points_in_geo:
-            selected_point = None
-        else:
-            selected_point = points_in_geo[random.randint(0, points_in_geo_count-1)]
+        selected_point = self.place_to_pause(pairs_of_points, geo_fence)
 
         for idx, (point1, point2) in enumerate(pairs_of_points):
             dist = geopy.distance.distance((list(point1)[1], list(point1)[0]), (list(point2)[1], list(point2)[0])).meters
