@@ -43,7 +43,8 @@ class TestCompetitor(unittest.TestCase):
         self.assertEqual(next_point["distance"], 5.528714349709607)
 
     def test_generate_points_inside_geofence(self):
-        competitor = Competitor(1, 1, pace_variance=0)
+        first_point_in_geo = lambda points_in_geo: points_in_geo[0]
+        competitor = Competitor(1, 1, pace_variance=0, geo_fence_selection_fn=first_point_in_geo)
         
         # Define points all inside the geo fence.
         points = [(51.5072, -0.1656), (51.5076, -0.1757), (51.5060, -0.1800), (51.5098, -0.1625)]
@@ -65,6 +66,7 @@ class TestCompetitor(unittest.TestCase):
         seconds_per_km = 144
         start = datetime(2020, 1, 1)
 
+    
         competitor.generate_points(points, min_pause, max_pause, geo_fence, seconds_per_km, start)
 
         self.assertEqual(len(competitor.route), 532)
@@ -76,3 +78,29 @@ class TestCompetitor(unittest.TestCase):
         self.assertEqual(next_point["timestamp"], datetime(2020, 1, 1, 0, 0, 0))
         self.assertEqual(next_point["point"], (51.506, -0.18))
         self.assertEqual(next_point["distance"], 0)
+
+        next_point = competitor.next_point()
+
+        self.assertEqual(next_point["id"], 1)
+        self.assertEqual(next_point["rawTime"], 1)
+        self.assertEqual(next_point["timestamp"], datetime(2020, 1, 1, 0, 0, 1))
+        self.assertEqual(next_point["point"], (51.507202484470774, -0.1656627329196057))
+        self.assertEqual(next_point["distance"],  6.942159043009585)
+
+        for i in range(0, 10):
+            next_point = competitor.next_point()
+
+        self.assertEqual(next_point["id"], 1)
+        self.assertEqual(next_point["rawTime"], 11)
+        self.assertEqual(next_point["timestamp"], datetime(2020, 1, 1, 0, 0, 11))
+        self.assertEqual(next_point["point"], (51.507202484470774, -0.1656627329196057))
+        self.assertEqual(next_point["distance"],  6.942159043009585)
+      
+        # Pausing is finished
+        next_point = competitor.next_point()
+
+        self.assertEqual(next_point["id"], 1)
+        self.assertEqual(next_point["rawTime"], 12)
+        self.assertEqual(next_point["timestamp"], datetime(2020, 1, 1, 0, 0, 12))
+        self.assertEqual(next_point["point"], (51.507204968941565, -0.1657254658392072))
+        self.assertEqual(next_point["distance"],  13.884318086017416)
