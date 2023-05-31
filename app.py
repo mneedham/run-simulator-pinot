@@ -152,6 +152,12 @@ def page_home():
 
     m = folium.Map()
 
+    # Example values
+    start_wkt = "POINT (-0.063253 51.41917000000001)"
+    end_wkt = "POINT (-0.064283 51.419324)"
+    x_geo = [-0.0651347637176514, -0.0643622875213623, -0.0632894039154053, -0.0638902187347412, -0.0645339488983154, -0.0656068325042725, -0.0676238536834717, -0.0686323642730713, -0.0679242610931396, -0.0672805309295654, -0.0651347637176514]
+    y_geo = [51.41916166790023, 51.41886727626769, 51.41846583007674, 51.417997471730985, 51.41767630894881, 51.416900156242406, 51.41687339212095, 51.41715441461497, 51.41776998166006, 51.41878698731156, 51.41916166790023]
+
     x_start, y_start = wkt.loads(start_wkt).coords.xy
     x_end, y_end = wkt.loads(end_wkt).coords.xy
 
@@ -177,7 +183,11 @@ def page_home():
             folium.CircleMarker(location=(lat, lon), radius=3, color='Fuchsia')
         )    
 
-    st_data = st_folium(m, feature_group_to_add=fg,)
+    st_data = st_folium(m, 
+        feature_group_to_add=fg,
+        height=400,
+        width=700,
+    )
 
     st.subheader("Who's in the Geo fence?")
 

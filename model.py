@@ -46,7 +46,10 @@ class Competitor:
         points_in_geo = [point2 for point1, point2 in pairs_of_points if geo_fence.contains(Point(point2))]
         points_in_geo_count = len(points_in_geo)
 
-        selected_point = points_in_geo[random.randint(0, points_in_geo_count-1)]
+        if not points_in_geo:
+            selected_point = None
+        else:
+            selected_point = points_in_geo[random.randint(0, points_in_geo_count-1)]
 
         for idx, (point1, point2) in enumerate(pairs_of_points):
             dist = geopy.distance.distance((list(point1)[1], list(point1)[0]), (list(point2)[1], list(point2)[0])).meters
@@ -57,7 +60,7 @@ class Competitor:
                     seconds_to_pause = random.randint(min_pause, max_pause)
                     for pause in range(0, seconds_to_pause):
                         raw_time = idx+1+totalTimePaused+pause
-                        route.append({"id": id, "rawTime": raw_time, "timestamp": start + timedelta(seconds=raw_time), "point": point2, "distance": distance_so_far})
+                        route.append({"id": self.id, "rawTime": raw_time, "timestamp": start + timedelta(seconds=raw_time), "point": point2, "distance": distance_so_far})
                     totalTimePaused += seconds_to_pause
                     has_already_paused = True
 

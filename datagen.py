@@ -38,12 +38,10 @@ def get_geo_fence(course):
 
     geo_fence = wkt.loads(geo_fence_wkt)
 
-    points = wkt.loads(course_map_wkt)
-
     return geo_fence
 
 
-class Simple(resource.Resource):
+class Courses(resource.Resource):
     isLeaf = True
 
     def render_POST(self, request):
@@ -102,7 +100,7 @@ class Simple(resource.Resource):
 
         return server.NOT_DONE_YET
 
-def emit_locations():
+def emit_events():
     messages_flushed = 0
     global races
     for race_id, race in races.items():
@@ -146,8 +144,6 @@ def json_serializer(obj):
 
 
 def publish_point(producer, run_id, user_id, raw_time, timestamp, point, distance_so_far, course):
-    # print(raw_time, timestamp, point, distance_so_far)
-    
     row = {
         "runId": run_id,
         "eventId": str(uuid.uuid4()),
@@ -159,7 +155,6 @@ def publish_point(producer, run_id, user_id, raw_time, timestamp, point, distanc
         "distance": distance_so_far,
         "course": course
     }
-    print(row)
 
     try:
         payload = json.dumps(row, default=json_serializer, ensure_ascii=False).encode('utf-8')
@@ -168,11 +163,11 @@ def publish_point(producer, run_id, user_id, raw_time, timestamp, point, distanc
         print(f"Failed to parse: {row}")
 
 def main():
-    site = server.Site(Simple())
+    site = server.Site(Courses())
     endpoint = endpoints.TCP4ServerEndpoint(reactor, 8080)
     endpoint.listen(site)
 
-    l = task.LoopingCall(emit_locations)
+    l = task.LoopingCall(emit_events)
     loopDeferred = l.start(1.0)
     loopDeferred.addErrback(ebLoopFailed)
     loopDeferred.addCallback(cbLoopDone)
